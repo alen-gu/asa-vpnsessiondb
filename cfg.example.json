@@ -1,0 +1,32 @@
+{
+	"debug": true,
+	"snmpConfig":{
+		"community":"public",
+		"asaAddr":"202.120.88.160",
+		"timeout":3,
+		"retry":3,
+		"limitConn":5,
+		"interval":60
+	},
+	"casSet":{
+		"crasUsername":true,
+		"crasSessionDuration":true,
+		"crasLocalAddress":true,
+		"crasISPAddress":true,
+		"crasClientVendorString":true,
+		"crasClientVersionString":true,
+		"crasClientOSVendorString":true,
+		"crasClientOSVersionString":true,
+		"crasSessionInPkts":true,
+		"crasSessionOutPkts":true,
+		"crasSessionInDropPkts":true,
+		"crasSessionOutDropPkts":true,
+		"crasSessionInOctets":true,
+		"crasSessionOutOctets":true,
+		"crasSessionState":true
+	},
+    "http": {
+        "enabled": true,
+        "listen": ":10086"
+    }
+}
