@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"net/http"
 
-	"github.com/shanghai-edu/anyconnect-sessiondb/g"
+	"github.com/shanghai-edu/asa-vpnsessiondb/g"
 	"github.com/toolkits/file"
 )
 

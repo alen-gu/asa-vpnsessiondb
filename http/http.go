@@ -6,7 +6,7 @@ import (
 	"net/http"
 	_ "net/http/pprof"
 
-	"github.com/shanghai-edu/anyconnect-sessiondb/g"
+	"github.com/shanghai-edu/asa-vpnsessiondb/g"
 )
 
 type Dto struct {
