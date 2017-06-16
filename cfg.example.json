@@ -1,8 +1,8 @@
 {
 	"debug": true,
 	"snmpConfig":{
-		"community":"public",
-		"asaAddr":"202.120.88.160",
+		"community":"ecnu-test",
+		"asaAddr":"202.120.80.131",
 		"timeout":3,
 		"retry":3,
 		"limitConn":5,

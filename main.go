@@ -5,14 +5,15 @@ import (
 	"fmt"
 	"os"
 
-	"github.com/shanghai-edu/asa-vpnsessiondb/http"
+	//	"github.com/alen-gu/asa-vpnsessiondb/cron"
+	"github.com/alen-gu/asa-vpnsessiondb/g"
 
-	"github.com/shanghai-edu/asa-vpnsessiondb/g"
+	"github.com/alen-gu/asa-vpnsessiondb/http"
 )
 
 func main() {
 
-	cfg := flag.String("c", "cfg.json", "configuration file")
+	cfg := flag.String("c", "cfg.example.json", "configuration file")
 	version := flag.Bool("v", false, "show version")
 
 	flag.Parse()
@@ -23,6 +24,11 @@ func main() {
 	}
 
 	g.ParseConfig(*cfg)
+	//sqlite.Init_DB()
+	//go cron.UpdateDB()
+	//aaa, err := sqlite.SearchAll_DB()
+	//fmt.Println(err)
+	//fmt.Println(aaa)
 	go http.Start()
 	select {}
 

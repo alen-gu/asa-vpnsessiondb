@@ -10,27 +10,28 @@ import (
 	_ "github.com/mattn/go-sqlite3"
 )
 
-type vpnsession struct {
-	crasUsername              string
-	crasGroup                 string
-	crasSessionDuration       int64
-	crasLocalAddress          string
-	crasISPAddress            string
-	crasClientVendorString    string
-	crasClientVersionString   string
-	crasClientOSVendorString  string
-	crasClientOSVersionString string
-	crasSessionInPkts         int64
-	crasSessionOutPkts        int64
-	crasSessionInDropPkts     int64
-	crasSessionOutDropPkts    int64
-	crasSessionInOctets       int64
-	crasSessionOutOctets      int64
-	crasSessionState          int64
-	updateTime                int64
+type VpnSession struct {
+	CrasIndex                 int64  `json:"crasIndex"`
+	CrasUsername              string `json:"crasUsername"`
+	CrasGroup                 string `json:"crasGroup"`
+	CrasSessionDuration       int64  `json:"crasSessionDuration"`
+	CrasLocalAddress          string `json:"crasLocalAddress"`
+	CrasISPAddress            string `json:"crasISPAddress"`
+	CrasClientVendorString    string `json:"crasClientVendorString"`
+	CrasClientVersionString   string `json:"crasClientVersionString"`
+	CrasClientOSVendorString  string `json:"crasClientOSVendorString"`
+	CrasClientOSVersionString string `json:"crasClientOSVersionString"`
+	CrasSessionInPkts         int64  `json:"crasSessionOutPkts"`
+	CrasSessionOutPkts        int64  `json:"crasSessionOutPkts"`
+	CrasSessionInDropPkts     int64  `json:"crasSessionInDropPkts"`
+	CrasSessionOutDropPkts    int64  `json:"crasSessionOutDropPkts"`
+	CrasSessionInOctets       int64  `json:"crasSessionInOctets"`
+	CrasSessionOutOctets      int64  `json:"crasSessionOutOctets"`
+	CrasSessionState          int64  `json:"crasSessionState"`
+	UpdateTime                int64  `json:"updateTime"`
 }
 
-func init_database() error {
+func Init_DB() error {
 	err := os.Remove("./session.db")
 	if err != nil {
 		log.Println(err)
@@ -43,6 +44,7 @@ func init_database() error {
 	sqlStmt := `
 	create table sessions (
 	id integer not null primary key, 
+	crasIndex integer,
 	crasUsername text,
 	crasGroup text,
 	crasSessionDuration integer,
@@ -69,7 +71,7 @@ func init_database() error {
 	return err
 }
 
-func insert_database(VpnSessionDB map[int]vpnsession) error {
+func InsertOne_DB(session VpnSession) error {
 	db, err := sql.Open("sqlite3", "./session.db")
 	if err != nil {
 		return err
@@ -80,6 +82,7 @@ func insert_database(VpnSessionDB map[int]vpnsession) error {
 		return err
 	}
 	insert_sql := `insert into sessions(
+	crasIndex,
 	crasUsername,
 	crasGroup,
 	crasSessionDuration,
@@ -97,7 +100,70 @@ func insert_database(VpnSessionDB map[int]vpnsession) error {
 	crasSessionOutOctets,
 	crasSessionState,
 	updateTime) 
-	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`
+	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`
+	stmt, err := tx.Prepare(insert_sql)
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	now := time.Now().Unix()
+	_, err = stmt.Exec(session.CrasIndex,
+		session.CrasUsername,
+		session.CrasGroup,
+		session.CrasSessionDuration,
+		session.CrasLocalAddress,
+		session.CrasISPAddress,
+		session.CrasClientVendorString,
+		session.CrasClientVersionString,
+		session.CrasClientOSVendorString,
+		session.CrasClientOSVersionString,
+		session.CrasSessionInPkts,
+		session.CrasSessionOutPkts,
+		session.CrasSessionInDropPkts,
+		session.CrasSessionOutDropPkts,
+		session.CrasSessionInOctets,
+		session.CrasSessionOutOctets,
+		session.CrasSessionState,
+		now,
+	)
+	if err != nil {
+		return err
+	}
+
+	tx.Commit()
+	return err
+}
+
+func Insert_DB(VpnSessionDB map[int]VpnSession) error {
+	db, err := sql.Open("sqlite3", "./session.db")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	tx, err := db.Begin()
+	if err != nil {
+		return err
+	}
+	insert_sql := `insert into sessions(
+	crasIndex,
+	crasUsername,
+	crasGroup,
+	crasSessionDuration,
+	crasLocalAddress,
+	crasISPAddress,
+	crasClientVendorString,
+	crasClientVersionString,
+	crasClientOSVendorString,
+	crasClientOSVersionString,
+	crasSessionInPkts,
+	crasSessionOutPkts,
+	crasSessionInDropPkts,
+	crasSessionOutDropPkts,
+	crasSessionInOctets,
+	crasSessionOutOctets,
+	crasSessionState,
+	updateTime) 
+	values(?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?,?);`
 	stmt, err := tx.Prepare(insert_sql)
 	if err != nil {
 		return err
@@ -105,22 +171,23 @@ func insert_database(VpnSessionDB map[int]vpnsession) error {
 	defer stmt.Close()
 	now := time.Now().Unix()
 	for _, session := range VpnSessionDB {
-		_, err = stmt.Exec(session.crasUsername,
-			session.crasGroup,
-			session.crasSessionDuration,
-			session.crasLocalAddress,
-			session.crasISPAddress,
-			session.crasClientVendorString,
-			session.crasClientVersionString,
-			session.crasClientOSVendorString,
-			session.crasClientOSVersionString,
-			session.crasSessionInPkts,
-			session.crasSessionOutPkts,
-			session.crasSessionInDropPkts,
-			session.crasSessionOutDropPkts,
-			session.crasSessionInOctets,
-			session.crasSessionOutOctets,
-			session.crasSessionState,
+		_, err = stmt.Exec(session.CrasIndex,
+			session.CrasUsername,
+			session.CrasGroup,
+			session.CrasSessionDuration,
+			session.CrasLocalAddress,
+			session.CrasISPAddress,
+			session.CrasClientVendorString,
+			session.CrasClientVersionString,
+			session.CrasClientOSVendorString,
+			session.CrasClientOSVersionString,
+			session.CrasSessionInPkts,
+			session.CrasSessionOutPkts,
+			session.CrasSessionInDropPkts,
+			session.CrasSessionOutDropPkts,
+			session.CrasSessionInOctets,
+			session.CrasSessionOutOctets,
+			session.CrasSessionState,
 			now,
 		)
 		if err != nil {
@@ -131,73 +198,44 @@ func insert_database(VpnSessionDB map[int]vpnsession) error {
 	return err
 }
 
-func search_database(filter string, mode int) ([]vpnsession, error) {
+func Search_DB(filter string, mode int) ([]VpnSession, error) {
 	var (
 		id      int
-		session vpnsession
+		session VpnSession
 	)
-	sessions := []vpnsession{}
+	sessions := []VpnSession{}
 	db, err := sql.Open("sqlite3", "./session.db")
 	if err != nil {
 		return nil, err
 	}
 	defer db.Close()
 	switch mode {
-	case 0:
+	case 1:
 		rows, err := db.Query("select * from sessions where crasUsername = ?", filter)
 		if err != nil {
 			return nil, err
 		}
+		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(&id,
-				&session.crasUsername,
-				&session.crasGroup,
-				&session.crasSessionDuration,
-				&session.crasLocalAddress,
-				&session.crasISPAddress,
-				&session.crasClientVendorString,
-				&session.crasClientVersionString,
-				&session.crasClientOSVendorString,
-				&session.crasClientOSVersionString,
-				&session.crasSessionInPkts,
-				&session.crasSessionOutPkts,
-				&session.crasSessionInDropPkts,
-				&session.crasSessionOutDropPkts,
-				&session.crasSessionInOctets,
-				&session.crasSessionOutOctets,
-				&session.crasSessionState,
-				&session.updateTime,
-			)
-			if err != nil {
-				log.Println(err)
-				continue
-			}
-			sessions = append(sessions, session)
-		}
-	case 1:
-		rows, err := db.Query("select * from sessions where crasLocalAddress = ?", filter)
-		if err != nil {
-			return nil, err
-		}
-		for rows.Next() {
-			err := rows.Scan(&id,
-				&session.crasUsername,
-				&session.crasGroup,
-				&session.crasSessionDuration,
-				&session.crasLocalAddress,
-				&session.crasISPAddress,
-				&session.crasClientVendorString,
-				&session.crasClientVersionString,
-				&session.crasClientOSVendorString,
-				&session.crasClientOSVersionString,
-				&session.crasSessionInPkts,
-				&session.crasSessionOutPkts,
-				&session.crasSessionInDropPkts,
-				&session.crasSessionOutDropPkts,
-				&session.crasSessionInOctets,
-				&session.crasSessionOutOctets,
-				&session.crasSessionState,
-				&session.updateTime,
+				&session.CrasIndex,
+				&session.CrasUsername,
+				&session.CrasGroup,
+				&session.CrasSessionDuration,
+				&session.CrasLocalAddress,
+				&session.CrasISPAddress,
+				&session.CrasClientVendorString,
+				&session.CrasClientVersionString,
+				&session.CrasClientOSVendorString,
+				&session.CrasClientOSVersionString,
+				&session.CrasSessionInPkts,
+				&session.CrasSessionOutPkts,
+				&session.CrasSessionInDropPkts,
+				&session.CrasSessionOutDropPkts,
+				&session.CrasSessionInOctets,
+				&session.CrasSessionOutOctets,
+				&session.CrasSessionState,
+				&session.UpdateTime,
 			)
 			if err != nil {
 				log.Println(err)
@@ -206,29 +244,134 @@ func search_database(filter string, mode int) ([]vpnsession, error) {
 			sessions = append(sessions, session)
 		}
 	case 2:
+		rows, err := db.Query("select * from sessions where crasLocalAddress = ?", filter)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&id,
+				&session.CrasIndex,
+				&session.CrasUsername,
+				&session.CrasGroup,
+				&session.CrasSessionDuration,
+				&session.CrasLocalAddress,
+				&session.CrasISPAddress,
+				&session.CrasClientVendorString,
+				&session.CrasClientVersionString,
+				&session.CrasClientOSVendorString,
+				&session.CrasClientOSVersionString,
+				&session.CrasSessionInPkts,
+				&session.CrasSessionOutPkts,
+				&session.CrasSessionInDropPkts,
+				&session.CrasSessionOutDropPkts,
+				&session.CrasSessionInOctets,
+				&session.CrasSessionOutOctets,
+				&session.CrasSessionState,
+				&session.UpdateTime,
+			)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			sessions = append(sessions, session)
+		}
+	case 3:
 		rows, err := db.Query("select * from sessions where crasISPAddress = ?", filter)
 		if err != nil {
 			return nil, err
 		}
+		defer rows.Close()
 		for rows.Next() {
 			err := rows.Scan(&id,
-				&session.crasUsername,
-				&session.crasGroup,
-				&session.crasSessionDuration,
-				&session.crasLocalAddress,
-				&session.crasISPAddress,
-				&session.crasClientVendorString,
-				&session.crasClientVersionString,
-				&session.crasClientOSVendorString,
-				&session.crasClientOSVersionString,
-				&session.crasSessionInPkts,
-				&session.crasSessionOutPkts,
-				&session.crasSessionInDropPkts,
-				&session.crasSessionOutDropPkts,
-				&session.crasSessionInOctets,
-				&session.crasSessionOutOctets,
-				&session.crasSessionState,
-				&session.updateTime,
+				&session.CrasIndex,
+				&session.CrasUsername,
+				&session.CrasGroup,
+				&session.CrasSessionDuration,
+				&session.CrasLocalAddress,
+				&session.CrasISPAddress,
+				&session.CrasClientVendorString,
+				&session.CrasClientVersionString,
+				&session.CrasClientOSVendorString,
+				&session.CrasClientOSVersionString,
+				&session.CrasSessionInPkts,
+				&session.CrasSessionOutPkts,
+				&session.CrasSessionInDropPkts,
+				&session.CrasSessionOutDropPkts,
+				&session.CrasSessionInOctets,
+				&session.CrasSessionOutOctets,
+				&session.CrasSessionState,
+				&session.UpdateTime,
+			)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			sessions = append(sessions, session)
+		}
+	case 0:
+		rows, err := db.Query("select * from sessions where crasIndex = ?", filter)
+		if err != nil {
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&id,
+				&session.CrasIndex,
+				&session.CrasUsername,
+				&session.CrasGroup,
+				&session.CrasSessionDuration,
+				&session.CrasLocalAddress,
+				&session.CrasISPAddress,
+				&session.CrasClientVendorString,
+				&session.CrasClientVersionString,
+				&session.CrasClientOSVendorString,
+				&session.CrasClientOSVersionString,
+				&session.CrasSessionInPkts,
+				&session.CrasSessionOutPkts,
+				&session.CrasSessionInDropPkts,
+				&session.CrasSessionOutDropPkts,
+				&session.CrasSessionInOctets,
+				&session.CrasSessionOutOctets,
+				&session.CrasSessionState,
+				&session.UpdateTime,
+			)
+			if err != nil {
+				log.Println(err)
+				continue
+			}
+			sessions = append(sessions, session)
+		}
+	case 4:
+		query := "select * from sessions where 1=1 "
+		query = query + filter
+		log.Println(query)
+		rows, err := db.Query(query)
+		if err != nil {
+			log.Println(err)
+			return nil, err
+		}
+		defer rows.Close()
+		for rows.Next() {
+			err := rows.Scan(&id,
+				&session.CrasIndex,
+				&session.CrasUsername,
+				&session.CrasGroup,
+				&session.CrasSessionDuration,
+				&session.CrasLocalAddress,
+				&session.CrasISPAddress,
+				&session.CrasClientVendorString,
+				&session.CrasClientVersionString,
+				&session.CrasClientOSVendorString,
+				&session.CrasClientOSVersionString,
+				&session.CrasSessionInPkts,
+				&session.CrasSessionOutPkts,
+				&session.CrasSessionInDropPkts,
+				&session.CrasSessionOutDropPkts,
+				&session.CrasSessionInOctets,
+				&session.CrasSessionOutOctets,
+				&session.CrasSessionState,
+				&session.UpdateTime,
 			)
 			if err != nil {
 				log.Println(err)
@@ -239,16 +382,30 @@ func search_database(filter string, mode int) ([]vpnsession, error) {
 	default:
 		return nil, errors.New("searchmode error: must in 0-2")
 	}
-
 	return sessions, err
 }
 
-func searchall_database() ([]vpnsession, error) {
+func SearchByIndex_DB(filter int64) (bool, error) {
+	db, err := sql.Open("sqlite3", "./session.db")
+	if err != nil {
+		return false, err
+	}
+	defer db.Close()
+	rows, err := db.Query("select * from sessions where crasIndex = ?", filter)
+	if err != nil {
+		return false, err
+	}
+	defer rows.Close()
+	result := rows.Next()
+	return result, err
+}
+
+func SearchAll_DB() ([]VpnSession, error) {
 	var (
 		id      int
-		session vpnsession
+		session VpnSession
 	)
-	sessions := []vpnsession{}
+	sessions := []VpnSession{}
 	db, err := sql.Open("sqlite3", "./session.db")
 	if err != nil {
 		return nil, err
@@ -259,25 +416,27 @@ func searchall_database() ([]vpnsession, error) {
 	if err != nil {
 		return nil, err
 	}
+	defer rows.Close()
 	for rows.Next() {
 		err := rows.Scan(&id,
-			&session.crasUsername,
-			&session.crasGroup,
-			&session.crasSessionDuration,
-			&session.crasLocalAddress,
-			&session.crasISPAddress,
-			&session.crasClientVendorString,
-			&session.crasClientVersionString,
-			&session.crasClientOSVendorString,
-			&session.crasClientOSVersionString,
-			&session.crasSessionInPkts,
-			&session.crasSessionOutPkts,
-			&session.crasSessionInDropPkts,
-			&session.crasSessionOutDropPkts,
-			&session.crasSessionInOctets,
-			&session.crasSessionOutOctets,
-			&session.crasSessionState,
-			&session.updateTime,
+			&session.CrasIndex,
+			&session.CrasUsername,
+			&session.CrasGroup,
+			&session.CrasSessionDuration,
+			&session.CrasLocalAddress,
+			&session.CrasISPAddress,
+			&session.CrasClientVendorString,
+			&session.CrasClientVersionString,
+			&session.CrasClientOSVendorString,
+			&session.CrasClientOSVersionString,
+			&session.CrasSessionInPkts,
+			&session.CrasSessionOutPkts,
+			&session.CrasSessionInDropPkts,
+			&session.CrasSessionOutDropPkts,
+			&session.CrasSessionInOctets,
+			&session.CrasSessionOutOctets,
+			&session.CrasSessionState,
+			&session.UpdateTime,
 		)
 		if err != nil {
 			log.Println(err)
@@ -289,7 +448,7 @@ func searchall_database() ([]vpnsession, error) {
 	return sessions, err
 }
 
-func deleteold_database(interval int64) error {
+func DeleteOld_DB(interval int64) error {
 	db, err := sql.Open("sqlite3", "./session.db")
 	if err != nil {
 		return err
@@ -300,6 +459,7 @@ func deleteold_database(interval int64) error {
 	if err != nil {
 		return err
 	}
+	defer stmt.Close()
 	res, err := stmt.Exec(expiredTime)
 	if err != nil {
 		return err
@@ -311,4 +471,28 @@ func deleteold_database(interval int64) error {
 	log.Println(affect)
 	return err
 
+}
+
+func UpdateTime_DB(filter int64) error {
+	db, err := sql.Open("sqlite3", "./session.db")
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	now := time.Now().Unix()
+	stmt, err := db.Prepare("update sessions set updateTime = ? where crasIndex = ?")
+	if err != nil {
+		return err
+	}
+	defer stmt.Close()
+	res, err := stmt.Exec(now, filter)
+	if err != nil {
+		return err
+	}
+	affect, err := res.RowsAffected()
+	if err != nil {
+		return err
+	}
+	log.Println(affect)
+	return err
 }

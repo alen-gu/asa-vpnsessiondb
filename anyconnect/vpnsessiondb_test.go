@@ -5,7 +5,7 @@ import (
 )
 
 const (
-	ip        = "1.1.1.1"
+	ip        = "202.120.88.160"
 	community = "ecnu-test"
 )
 

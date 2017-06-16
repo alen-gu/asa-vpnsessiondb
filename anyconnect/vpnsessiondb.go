@@ -28,6 +28,7 @@ var crasSessionEntry = map[string]string{
 }
 
 type vpnsession struct {
+	crasIndex                 int64 //增加这个
 	crasUsername              string
 	crasGroup                 string
 	crasSessionDuration       int64
@@ -80,6 +81,7 @@ func GetVpnSessionDB(ip, community string, crasSet []string, timeout int, retry 
 	}
 	for name, value := range crasEntryMapList[0] {
 		index, crasUsername := CalcUsernameIndex(name)
+		session.crasIndex = int64(index) //2017-6-14
 		session.crasUsername = crasUsername
 		session.crasGroup = value.(string)
 		for i, crasEntryMap := range crasEntryMapList {
